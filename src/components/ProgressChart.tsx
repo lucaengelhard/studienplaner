@@ -1,112 +1,88 @@
+import {
+  RadialBarChart,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Label,
+  RadialBar,
+} from "recharts";
+import { ChartConfig, ChartContainer } from "./ui/chart";
 import { useMemo } from "react";
 
-export type ProgressChartData = ProgressChartDataPoint[];
-export type ProgressChartDataPoint = {
-  name: string;
-  color: string;
-  value: number;
-};
-
-export type ProgressChartGoal = { name: string; value: number };
+export type chartData = [{ [key: keyof ChartConfig]: number }];
 
 export default function ProgressChart({
-  size,
-  stroke,
+  config,
   data,
-  max,
-  goals,
+  maxValue,
 }: {
-  size: number;
-  stroke: number;
-  data: ProgressChartData;
-  max?: number;
-  goals?: ProgressChartGoal[];
+  config: ChartConfig;
+  data: chartData;
+  maxValue: number;
 }) {
-  const calculatedMax = useMemo(() => {
-    if (max) return max;
-    if (goals) {
-      return goals.reduce((maxObj, currentObj) =>
-        currentObj.value > maxObj.value ? currentObj : maxObj
-      ).value;
-    }
-
-    return data.reduce(
-      (accumulator, current) => accumulator + current.value,
-      0
-    );
-  }, [data, goals, max]);
+  const totalPointsEarned = useMemo(
+    () => Object.values(data[0]).reduce((acc, curr) => (acc += curr), 0),
+    [data]
+  );
 
   return (
-    <div style={{ height: size + "px" }} className="aspect-square">
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        xmlns="http://www.w3.org/2000/svg"
+    <ChartContainer config={config}>
+      <RadialBarChart
+        data={data}
+        innerRadius={"60%"}
+        outerRadius={"80%"}
+        barSize={70}
+        startAngle={0}
+        endAngle={350}
       >
-        {/**
-        <circle
-          r={circleRadius}
-          cx={"50%"}
-          cy={"50%"}
-          fill="none"
-          className="stroke-slate-200"
-          strokeWidth={stroke}
-        ></circle> */}
-        {data.map((datapoint) => (
-          <ProgressChartSlice
-            size={size}
-            stroke={stroke}
-            max={calculatedMax}
-            datapoint={datapoint}
+        <PolarAngleAxis
+          type="number"
+          domain={[0, maxValue]}
+          tick
+        ></PolarAngleAxis>
+        <PolarRadiusAxis
+          type="number"
+          domain={[0, maxValue]}
+          tick={false}
+          tickLine={false}
+          axisLine={false}
+        >
+          <Label
+            content={({ viewBox }) => {
+              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                return (
+                  <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                    <tspan
+                      x={viewBox.cx}
+                      y={(viewBox.cy || 0) - 16}
+                      className="fill-foreground text-2xl font-bold"
+                    >
+                      {totalPointsEarned.toLocaleString()}
+                    </tspan>
+                    <tspan
+                      x={viewBox.cx}
+                      y={(viewBox.cy || 0) + 4}
+                      className="fill-muted-foreground"
+                    >
+                      Credits
+                    </tspan>
+                  </text>
+                );
+              }
+            }}
+          />
+        </PolarRadiusAxis>
+
+        {Object.keys(data[0]).map((key, index) => (
+          <RadialBar
+            dataKey={key}
+            fill={`var(--color-${key})`}
+            stackId={"a"}
+            cornerRadius={10}
+            background={index === 0}
+            key={key}
           />
         ))}
-      </svg>
-    </div>
-  );
-}
-
-function ProgressChartSlice({
-  size,
-  stroke,
-  max,
-  datapoint,
-}: {
-  stroke: number;
-  max: number;
-  datapoint: ProgressChartDataPoint;
-  size: number;
-}) {
-  const radius = useMemo(() => (size * 0.8) / 2, [size]);
-
-  const angle = useMemo(
-    () => (datapoint.value / max) * 360,
-    [datapoint.value, max]
-  );
-
-  console.log(max);
-
-  const largeArcFlag = useMemo(() => (angle > 180 ? 1 : 0), [angle]);
-
-  const x = useMemo(
-    () => radius + radius * Math.cos((Math.PI * (angle - 90)) / 180),
-    [angle, radius]
-  );
-  const y = useMemo(
-    () => radius + radius * Math.sin((Math.PI * (angle - 90)) / 180),
-    [angle, radius]
-  );
-
-  return (
-    <path
-      d={`
-        M ${size / 2} ${size / 2}
-        L ${radius}
-        A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x} ${y}
-        Z
-      `}
-      strokeWidth={stroke}
-      stroke={datapoint.color}
-    />
+      </RadialBarChart>
+    </ChartContainer>
   );
 }

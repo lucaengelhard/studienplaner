@@ -1,25 +1,30 @@
-import ProgressChart, {
-  ProgressChartData,
-  ProgressChartGoal,
-} from "./components/ProgressChart";
+import { ChartConfig } from "./components/ui/chart";
+import ProgressChart, { chartData } from "./components/ProgressChart";
 
 function App() {
-  const data: ProgressChartData = [
-    {
-      name: "Belegt",
-      color: "red",
-      value: 36,
+  const chartConfig: ChartConfig = {
+    bestanden: {
+      label: "Bestanden",
+      color: "green",
     },
-  ];
+    geplant: {
+      label: "Geplant",
+      icon: undefined,
+      color: "purple",
+    },
+    belegt: {
+      label: "Belegt",
+      color: "red",
+    },
+  };
 
-  const goals: ProgressChartGoal[] = [
-    { name: "Bachelor Zulassung", value: 120 },
-    { name: "Minimum Abschluss", value: 135 },
-  ];
+  const chartData: chartData = [{ bestanden: 10, belegt: 35, geplant: 0 }];
 
   return (
     <>
-      <ProgressChart size={300} stroke={20} data={data} goals={goals} />
+      <div>
+        <ProgressChart config={chartConfig} data={chartData} maxValue={135} />
+      </div>
     </>
   );
 }
